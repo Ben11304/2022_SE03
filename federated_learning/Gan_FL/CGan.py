@@ -67,14 +67,9 @@ class CGAN(object):
         # parameters
         self.epoch = args.epoch
         self.batch_size = args.batch_size
-        self.save_dir = args.save_dir
-        self.result_dir = args.result_dir
-        self.dataset = args.dataset
-        self.log_dir = args.log_dir
-        self.gpu_mode = args.gpu_mode
-        self.model_name = args.gan_type
-        self.z_dim = args.z_dim
-        self.class_num = args.n_class
+        self.dataset = args.dataset #cần điều chỉnh
+        self.z_dim = args.noise_size
+        self.class_num = args.n_classes
         # load dataset
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         data=next(iter(self.data_loader))
@@ -164,7 +159,7 @@ class CGAN(object):
               self.epoch, self.train_hist['total_time'][0]))
         print("Training finish!")
         return self.train_hist
-    def get_parameter(self):
+    def get_parameters(self):
 
         params=self.D.state_dict()
         D_parameters=[]

@@ -12,6 +12,8 @@ import pandas as pd
 import collections
 from collections import OrderedDict
 import torch.nn.functional as F
+import utils
+
 class Net(nn.Module):
     def __init__(self, dropout_rate):
         super(Net, self).__init__()
@@ -28,6 +30,9 @@ class Net(nn.Module):
         for key,_ in params.items():
             keys.append(key)
         self.params_key=keys
+        print('---------- Networks architecture -------------')
+        utils.print_network(self)
+        print('-----------------------------------------------')
         
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -85,12 +90,12 @@ class Net(nn.Module):
                 val_loss,val_accuracy=self.evaluate(X_va,y_va)
                 history['val_loss'].append(val_loss)
                 history["val_accuracy"].append(val_accuracy)
-            print(f"accuracy of epoch {epoch} is {history['val_accuracy'][-1]}, loss : {history['loss'][-1]}")
+            print(f"accuracy of epoch {epoch} is {history['val_accuracy'][-1]}")
             # Lan truyền ngược và cập nhật tham số mô hình
             loss.backward()
             optimizer.step()
         return history
-    def get_parameter(self):
+    def get_parameters(self):
         params=self.state_dict()
         parameters=[]
         keys=[]
@@ -100,7 +105,7 @@ class Net(nn.Module):
         self.params_key=keys
         return parameters
     
-    def load_parameter(self, parameters_tensor):
+    def load_parameters(self, parameters_tensor):
         if isinstance(parameters_tensor, OrderedDict):
             self.load_state_dict(parameters_tensor)
         else:
@@ -114,7 +119,7 @@ class Net(nn.Module):
     def get_weigthdivegence(self, par):
         t=float(0)
         m=float(0)
-        param=self.get_parameter()
+        param=self.get_parameters()
         for i in range(0,len(param),2):
             size=param[i].size()
             if len(size)==1:
