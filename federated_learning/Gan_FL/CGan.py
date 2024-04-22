@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import collections
 from collections import OrderedDict
+import pandas as pd
 
 class Gen(nn.Module):
     def __init__(self, args):
@@ -75,7 +76,6 @@ class CGAN(object):
         data=next(iter(self.data_loader))
         #option
         dim=int(data.shape[1])-8
-
         #location of Gen and Dis parameters keys
         self.D_params_key=[]
         self.G_params_key=[]
@@ -89,21 +89,39 @@ class CGAN(object):
         
         self.MSE_loss = torch.nn.MSELoss()
         self.BCE_loss=nn.BCELoss()
+        self.CE_loss=nn.CrossEntropyLoss()
 
-        print('---------- Networks architecture -------------')
-        utils.print_network(self.G)
-        utils.print_network(self.D)
-        print('-----------------------------------------------')
+        # print('---------- Networks architecture -------------')
+        # utils.print_network(self.G)
+        # utils.print_network(self.D)
+        # print('-----------------------------------------------')
+    def freedata_train(self,m_model):
+        print('training start!!')
+        torch.autograd.set_detect_anomaly(True)
+        for epoch in range(self.epoch):
+            self.G.train()
+            y_ = torch.randint(0, 8, (self.batch_size,))
+            y_=y_.squeeze()
+            y_=torch.tensor(y_).long()
+            z_ = Variable(torch.FloatTensor(np.random.normal(0, 1, (self.batch_size, self.z_dim))))
+            self.G_optimizer.zero_grad()
+            z_=torch.rand((self.batch_size, self.z_dim))
+            G_ = self.G(z_, y_)
+            M = m_model(G_)
+            G_loss = self.CE_loss(M, y_)
+            G_loss.backward()
+            self.G_optimizer.step()
+            print(f"epoch {epoch} G loss : {G_loss}")
+                
 
-
-
-    def train(self):
+    def train(self,data):
         self.train_hist = {}
         self.train_hist['D_loss'] = []
         self.train_hist['G_loss'] = []
         self.train_hist['per_epoch_time'] = []
         self.train_hist['total_time'] = []
-
+        if len(data)!=0:
+            self.data_loader = DataLoader(data, batch_size=self.batch_size, shuffle=True)
         #self.y_real_ = Variable(torch.FloatTensor(self.batch_size, 1).fill_(1.0), requires_grad=False)
         #self.y_fake_ = Variable(torch.FloatTensor(self.batch_size, 1).fill_(0.0), requires_grad=False)
 
@@ -198,6 +216,11 @@ class CGAN(object):
                 tensor.append(torch.tensor(par))
             params = collections.OrderedDict(zip(self.G_params_key,tensor))
             self.G.load_state_dict(params)
-
-
-
+    def sample(self,y,n_samples):
+        if isinstance(y, pd.DataFrame):
+            y=torch.tensor(y.values)
+        z= torch.rand(n_samples,self.z_dim)
+        fdata=self.G(z,y)
+        y = y.unsqueeze(1) 
+        fdata=torch.cat((y,fdata),dim=1)
+        return fdata
