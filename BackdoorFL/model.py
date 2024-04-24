@@ -12,12 +12,10 @@ import pandas as pd
 import collections
 from collections import OrderedDict
 import torch.nn.functional as F
-import utils
-
 class Net(nn.Module):
     def __init__(self, dropout_rate):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(28, 64)
+        self.fc1 = nn.Linear(26, 64)
         self.dropout1 = nn.Dropout(dropout_rate)
         self.fc2 = nn.Linear(64, 128)
         self.dropout2 = nn.Dropout(dropout_rate)
@@ -30,9 +28,6 @@ class Net(nn.Module):
         for key,_ in params.items():
             keys.append(key)
         self.params_key=keys
-        print('---------- Networks architecture -------------')
-        utils.print_network(self)
-        print('-----------------------------------------------')
         
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -70,14 +65,14 @@ class Net(nn.Module):
         
         return loss.item(), accuracy
     
-    def fit(self, inputs, targets,learning_rate: float,  val_size: float , num_epochs=10):
+    def fit(self, inputs, targets,learning_rate: float,  val_size: float , num_epochs=5):
         # Lịch sử huấn luyện
         optimizer=torch.optim.RMSprop(self.parameters(), lr=learning_rate)
         history = {'loss': [], 'accuracy': [], 'val_loss': [], 'val_accuracy': []}
         X_tr, X_va, y_tr, y_va = train_test_split(inputs, targets, test_size=val_size)
         for epoch in range(num_epochs):
             # Tính toán đầu ra mô hình
-            optimizer.zero_grad()
+            optimizer.zero_grad()            
             outputs = self(X_tr)
             loss,accuracy=self.Quick_evaluate(outputs,y_tr.long())
             # Lưu thông tin mất mát vào lịch sử
@@ -90,12 +85,12 @@ class Net(nn.Module):
                 val_loss,val_accuracy=self.evaluate(X_va,y_va)
                 history['val_loss'].append(val_loss)
                 history["val_accuracy"].append(val_accuracy)
-            print(f"accuracy of epoch {epoch} is {history['val_accuracy'][-1]}")
+            print(f"accuracy of epoch {epoch} is {history['val_accuracy'][-1]}, loss : {history['loss'][-1]}")
             # Lan truyền ngược và cập nhật tham số mô hình
             loss.backward()
             optimizer.step()
         return history
-    def get_parameters(self):
+    def get_parameter(self):
         params=self.state_dict()
         parameters=[]
         keys=[]
@@ -105,7 +100,7 @@ class Net(nn.Module):
         self.params_key=keys
         return parameters
     
-    def load_parameters(self, parameters_tensor):
+    def load_parameter(self, parameters_tensor):
         if isinstance(parameters_tensor, OrderedDict):
             self.load_state_dict(parameters_tensor)
         else:
@@ -119,7 +114,7 @@ class Net(nn.Module):
     def get_weigthdivegence(self, par):
         t=float(0)
         m=float(0)
-        param=self.get_parameters()
+        param=self.get_parameter()
         for i in range(0,len(param),2):
             size=param[i].size()
             if len(size)==1:

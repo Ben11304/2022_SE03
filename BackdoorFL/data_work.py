@@ -103,6 +103,7 @@ def identify_correlated(df, threshold):
     return to_drop
 
 def processed(data,label_name: str,threshold: int=0.01, corr_threshold=1):
+    data=data.dropna()
     label=data[label_name]
     data=data.drop(label_name,axis=1)
     data=pd.concat([label,data],axis=1)
