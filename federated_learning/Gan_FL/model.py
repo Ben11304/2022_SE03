@@ -30,9 +30,6 @@ class Net(nn.Module):
         for key,_ in params.items():
             keys.append(key)
         self.params_key=keys
-        # print('---------- Networks architecture -------------')
-        # utils.print_network(self)
-        # print('-----------------------------------------------')
         
     def forward(self, x):
         x = torch.relu(self.fc1(x))
