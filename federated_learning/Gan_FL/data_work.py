@@ -102,24 +102,63 @@ def identify_correlated(df, threshold):
 
     return to_drop
 
-def processed(data,label_name: str,threshold: int=0.01, corr_threshold=1):
-    label=data[label_name]
-    data=data.drop(label_name,axis=1)
-    data=pd.concat([label,data],axis=1)
-    data.astype(str)
-    df=data.dropna()
+# def processed(data,label_name: str,threshold: int=0.01, corr_threshold=1):
+#     label=data[label_name]
+#     data=data.drop(label_name,axis=1)
+#     data=pd.concat([label,data],axis=1)
+#     data.astype(str)
+#     df=data.dropna()
+#     label_encoder = LabelEncoder()
+#     encoded_df = df.apply(label_encoder.fit_transform)
+#     #feature selection
+#     selector = VarianceThreshold(threshold=threshold)
+#     filtered_df = selector.fit_transform(encoded_df)
+#     filtered_df = pd.DataFrame(filtered_df, columns=df.columns[selector.get_support()])
+#     #normalized
+#     normalized_df=filtered_df.mean()
+#     normalized_df=filtered_df.drop(identify_correlated(pd.DataFrame(normalized_df),corr_threshold),axis=1)
+#     processed_data=normalized_df
+#     processed_data=processed_data.sample(frac=1).reset_index(drop=True)
+#     return processed_data
+
+def processed(data, label_name: str, threshold: float=0.01, corr_threshold=1):
+    # Tách label
+    label = data[label_name]
+    data = data.drop(label_name, axis=1)
+    
+    # Tính giá trị trung bình cho cột số và mode cho cột categorical
+    mean_values = data.select_dtypes(include=[np.number]).mean()
+    mode_values = data.select_dtypes(exclude=[np.number]).mode().iloc[0]
+    
+    # Thay thế NaN bằng giá trị trung bình hoặc mode
+    data.fillna(mean_values, inplace=True)
+    data.fillna(mode_values, inplace=True)
+    
+    # Đưa label trở lại vào DataFrame
+    data = pd.concat([label, data], axis=1)
+    
+    # Chuyển đổi các cột sang kiểu dữ liệu số để encoding
+    df = data.apply(lambda x: x.astype(str) if x.dtype == 'object' else x)
+    
+    # Encoding dữ liệu
     label_encoder = LabelEncoder()
     encoded_df = df.apply(label_encoder.fit_transform)
-    #feature selection
+    
+    # Feature selection
     selector = VarianceThreshold(threshold=threshold)
     filtered_df = selector.fit_transform(encoded_df)
     filtered_df = pd.DataFrame(filtered_df, columns=df.columns[selector.get_support()])
-    #normalized
-    normalized_df=filtered_df.mean()
-    normalized_df=filtered_df.drop(identify_correlated(pd.DataFrame(normalized_df),corr_threshold),axis=1)
-    processed_data=normalized_df
-    processed_data=processed_data.sample(frac=1).reset_index(drop=True)
+    
+    # Xử lý correlated features (giả định bạn đã định nghĩa hàm identify_correlated)
+    normalized_df = filtered_df.mean()
+    normalized_df = filtered_df.drop(identify_correlated(pd.DataFrame(normalized_df), corr_threshold), axis=1)
+    
+    # Xáo trộn dữ liệu
+    processed_data = normalized_df.sample(frac=1).reset_index(drop=True)
+    
     return processed_data
+
+
 
 def count_label_data(labels):
     '''
